@@ -2,13 +2,13 @@
 The University of Edinrbugh SDP group project
 
 ## Tools
-For PI
+For PI <br/>
 ```
 sudo apt-get install python-serial
 sudo pip install pyserial
 sudo pip install flask
 sudo pip install flask_jsonpify
 ```
-For Arduino
-For Server
-For APP
+For Arduino <br/>
+For Server <br/>
+For APP <br/>
