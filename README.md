@@ -1,7 +1,7 @@
 # DumBot
 The University of Edinrbugh SDP group project
 
-## Tools
+## Environment and Tools
 For PI <br/>
 ```
 sudo apt-get install python-serial
