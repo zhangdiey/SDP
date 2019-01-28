@@ -1,4 +1,4 @@
-# SDP
+# DumBot
 The University of Edinrbugh SDP group project
 
 ## Tools
