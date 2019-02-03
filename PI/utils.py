@@ -1,2 +1,2 @@
 def isValidCMD(cmd):
-    return cmd in ['GO','HALT']
+    return cmd in ['h','g']
