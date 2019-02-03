@@ -18,13 +18,23 @@ DEMO = db.reference('demo1')
 # cur_cmd (g or h)
 # alert (True or False)
 
-@app.route('/')
-def test():
+@app.route('/sendCMD')
+def send_main():
     cur_cmd = getCurrentCMD()
     updateAlert(False)
     sendCMD(cur_cmd)
 
     return cur_cmd
+
+@app.route('/getAlert',methods=['POST'])
+def get_main():
+    status = flask.request.get_json(force=True)['alert']
+    print ('data from client:', status)
+    if (isValidSTATUS(status)):
+        updateAlert(status)
+        return "VALID STATUS"
+    else:
+        return "INVALID STATUS"
 
 def updateAlert(status):
     DEMO.update({'alert':f'{status}'})
@@ -32,9 +42,12 @@ def updateAlert(status):
 def getCurrentCMD():
     return DEMO.child('cur_cmd').get()
 
+def isValidSTATUS(status):
+    return status in ['True','False']
+
 def sendCMD(cmd):
     dictToSend = {'cmd':cmd}
-    res = requests.post('http://0.0.0.0:3142/', json=dictToSend)
+    res = requests.post('http://0.0.0.0:3142/getCMD', json=dictToSend)
     print ('response from server:', res.text)
 
 
