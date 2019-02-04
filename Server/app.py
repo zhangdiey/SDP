@@ -23,6 +23,7 @@ def send_main():
     cur_cmd = getCurrentCMD()
     updateAlert(False)
     sendCMD(cur_cmd)
+    DEMO.child('cur_cmd').listen(listener)
 
     return cur_cmd
 
@@ -47,9 +48,15 @@ def isValidSTATUS(status):
 
 def sendCMD(cmd):
     dictToSend = {'cmd':cmd}
-    res = requests.post('http://0.0.0.0:3142/getCMD', json=dictToSend)
+    res = requests.post('PATAMON/getCMD', json=dictToSend)
     print ('response from server:', res.text)
 
+def listener(event):
+    # print(event.event_type)  # can be 'put' or 'patch'
+    # print(event.path)  # relative to the reference, it seems
+    # print(event.data)  # new data at /reference/event.path. None if deleted
+    cur_cmd = getCurrentCMD()
+    sendCMD(cur_cmd)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=1337)
