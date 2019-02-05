@@ -1,5 +1,5 @@
 # DumBot
-The University of Edinrbugh SDP group project
+The University of Edinburgh SDP group project
 
 ## Environment and Tools
 ### PI <br/>
