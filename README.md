@@ -20,5 +20,6 @@ export GOOGLE_APPLICATION_CREDENTIALS=path/to/creds.json
 ```
 <br>
 Then open http://rudedski:1337/sendCMD to monitor the command.
+Test for python 3.7
 
 ### APP <br/>
