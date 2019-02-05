@@ -48,7 +48,7 @@ def isValidSTATUS(status):
 
 def sendCMD(cmd):
     dictToSend = {'cmd':cmd}
-    res = requests.post('http://192.168.105.136:3142/getCMD', json=dictToSend)
+    res = requests.post('http://patamon.inf.ed.ac.uk:3142/getCMD', json=dictToSend)
     print ('response from server:', res.text)
 
 def listener(event):
@@ -59,4 +59,4 @@ def listener(event):
     sendCMD(cur_cmd)
 
 if __name__ == '__main__':
-    app.run(debug=True, host='129.215.3.130', port=1337)
+    app.run(debug=True, host='rudedski.inf.ed.ac.uk', port=1337)
