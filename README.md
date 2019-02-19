@@ -19,7 +19,7 @@ pip install firebase-admin flask
 export GOOGLE_APPLICATION_CREDENTIALS=path/to/creds.json
 ```
 <br>
-Then open http://rudedski:1337/sendCMD to monitor the command.
-Test for python 3.7
+It is currently testing on localhost not PI.
+Tested for python 3.7
 
 ### APP <br/>
