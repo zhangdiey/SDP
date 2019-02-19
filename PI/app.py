@@ -30,4 +30,4 @@ def send_alert(status):
     print ('response from server:', res.text)
 
 if __name__ == '__main__':
-    app.run(debug=True, host='PATAMON', port=3142)
+    app.run(debug=True, host='0.0.0.0', port=3142)
