@@ -1,0 +1,66 @@
+import networkx as nx
+import math
+
+def make_request_eval(shortest_paths,alpha,time_zero):
+    def request_eval(prev_request_eval,request):
+        (previous_node,schedule_time,schedule_cost)=prev_request_eval
+        travel_time=shortest_paths[previous_node][0][request.start_node]
+        execution_time=shortest_paths[request.start_node][0][request.end_node][0]
+        schedule_time+=travel_time+execution_time
+        schedule_cost+=math.exp(alpha*(schedule_time-time_zero))*(travel_time+execution_time)
+        return (request.end_node,schedule_time,schedule_cost)
+    return request_eval
+def solve_schedule(start_node,requests,request_eval):
+    best_schedule=sorted(requests,key=(lambda x:x.time))
+    best_schedule_cost=reduce(request_eval,best_schedule,(start_node,0,0))[2]
+    queue=[([],requests,(start_node,0,0))]
+    while queue != []:
+        (schedule,remaining_requests,(last_node,schedule_time,schedule_cost))=queue.pop()
+        if schedule_cost<best_schedule_cost:
+            if remaining_requests==set([]):
+                best_schedule=schedule
+                best_schedule_cost=schedule_cost
+            else:
+                for request in remaining_requests:
+                    queue.append((schedule+[request],
+                                  remaining_requests-set([request]),
+                                  request_eval((last_node,schedule_time,schedule_cost),request)))
+    return best_schedule
+def schedule_to_route_schedule(start_node,schedule,shortest_paths):
+    start=start_node
+    route_schedule=[]
+    for request in schedule:
+        route_schedule.append((shortest_paths[start][1][request.start_node],shortest_paths[request.start_node][1][request.end_node]),request.id)
+    return route_schedule
+
+def route_schedule_to_pi_schedule(route_schedule,prev_edge,graph):
+    pi_schedule=[]
+    for (transition,execution,id) in route_schedule:
+        transition_route=[]
+        transition_copy=transition.copy()
+        transition.pop(0)
+        for (start,end) in zip(transition_copy,transition):
+            rotation=graph.edges[prev_edge]['angle'][(start,end)]
+            if rotation != 'f':
+                transition_route.append((rotation,start))
+            transition_route.append(('f',end))
+            prev_edge=(start,end)
+        transition_route.append('u')
+        execution_route=[]
+        execution_copy=execution.copy()
+        execution.pop(0)
+        for (start,end) in zip(transition_copy,transition):
+            rotation=graph.edges[prev_edge]['angle'][(start,end)]
+            if rotation != 'f':
+                arduino_route.append((rotation,start))
+            arduino_route.append(('f',end))
+            prev_edge=(start,end)
+        execution.append('d')
+        pi_schedule.append((transition_route,execution_route,id))
+    return pi_schedule
+        #dororo
+        
+
+                                
+            
+          
