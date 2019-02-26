@@ -6,20 +6,18 @@
 #define HALTED 0
 #define OBSTRUCTED_CLEARING 2
 #define TURNING 4
+//blue rgb 50 red
 
 #define value_for_black 600
 #define value_for_white 100
-#define value_for_red
-#define value_for_green
-#define value_for_blue
+#define value_for_red 20
+#define value_for_green 50
+#define value_for_blue 140
 
-#define value_for_blue_upper
-#define value_for_blue_lower
+#define value_for_blue_upper 300
+#define value_for_blue_lower 200
 
-#define left 'a'
-#define right 'c'
-#define forward 'f'
-#define backward 'b' //it is actually for turn 180 degrees
+//it is actually for turn 180 degrees
 
 //the right greyscale sensor number 2
 //the left greyscale sensor number 3
@@ -38,17 +36,16 @@ long duration;
 
 unsigned long obstructionTilHalt = 10000;
 unsigned long timeTilClear = 700;
-int state = HALTED;
+int state = GOING;
 unsigned long timeOfObstruction;
 unsigned long timeOfClearing;
 
 int red, green, blue;
-  GroveColorSensor colorSensor;
+GroveColorSensor colorSensor;
 char turning_state = forward;
 
 void setup(){
   SDPsetup();
-  delay(3000);
   helloWorld();
   colorSensor.ledStatus = 1;
 }
@@ -121,13 +118,13 @@ void detectSpot(){
 void followLine(){
   if(readAnalogSensorData(3)>value_for_black)
   {
-    motorBackward(2, 20);
-    motorForward(3, 20);
+    motorBackward(2, 50);
+    motorForward(3, 50);
   }
   else if(readAnalogSensorData(2)>value_for_black)
   {
-     motorBackward(4, 20);
-     motorForward(5, 20);
+     motorBackward(4, 50);
+     motorForward(5, 50);
   }
   else if(readAnalogSensorData(3)<value_for_white && readAnalogSensorData(2)<value_for_white)
   {
@@ -142,7 +139,7 @@ void followLine(){
 void detectStop()
 {
   colorSensor.readRGB(&red, &green, &blue);
-  if(red < color_for_red && green < color_for_green && blue > color_for_blue)
+  if(red < value_for_red && green < value_for_green && blue > value_for_blue)
   {
     Serial.write('n');
     state = TURNING;
@@ -164,7 +161,7 @@ void serialEvent(){
       turning_state = 'a';
       break;
     case 'b':
-      turning_state = 'b':
+      turning_state = 'b';
       break;
     case 'c':
       turning_state = 'c';
@@ -181,12 +178,16 @@ void turn()
    {
      case 'a':
        turn_left();
+       break;
      case 'b':
        backward();
+       break;
      case 'c':
        turn_right();
+       break;
      case 'f':
        forward();
+       break;
    }
 }
 
@@ -196,8 +197,8 @@ void turn_right()
 {
   if(readAnalogSensorData(2)>value_for_black)
   {
-     motorBackward(4, 20);
-     motorForward(5, 20);
+     motorBackward(4, 50);
+     motorForward(5, 50);
   }  
 }  
   else if(readAnalogSensorData(3)<value_for_white)
@@ -210,8 +211,8 @@ void turn_left()
   {
     if(readAnalogSensorData(3)>value_for_black)
   {
-    motorBackward(2, 20);
-    motorForward(3, 20);
+    motorBackward(2, 50);
+    motorForward(3, 50);
   }
   }
   else if(readAnalogSensorData(2)<value_for_white)
@@ -224,8 +225,8 @@ void turn_right_reverse()
   {
     if(readAnalogSensorData(3)>value_for_black)
   {
-    motorForward(2, 20);
-    motorBackward(3, 20);
+    motorForward(2, 50);
+    motorBackward(3, 50);
   }
   }
   else if(readAnalogSensorData(2) <value_for_white)
@@ -236,13 +237,13 @@ void forward()
 {
   if(readAnalogSensorData(3)>value_for_blue_lower && readAnalogSensorData(3)<value_for_blue_upper)
   {
-    motorBackward(2, 20);
-    motorForward(3, 20);
+    motorBackward(2, 50);
+    motorForward(3, 50);
   }
   else if(readAnalogSensorData(2)>value_for_blue_lower && readAnalogSensorData(2)<value_for_blue_upper)
   {
-     motorBackward(4, 20);
-     motorForward(5, 20);
+     motorBackward(4, 50);
+     motorForward(5, 50);
   }
   else if(readAnalogSensorData(2)<value_for_blue_lower || readAnalogSensorData(2)>value_for_blue_upper||readAnalogSensorData(3)<value_for_blue_lower || readAnalogSensorData(3)>value_for_blue_upper)
   {
@@ -253,37 +254,34 @@ void forward()
   }
   else if(readAnalogSensorData(2)<value_for_white && readAnalogSensorData(3)>value_for_white)
   {
-     motorBackward(4, 20);
-     motorForward(5, 20);
+     motorBackward(4, 50);
+     motorForward(5, 50);
   }
   else if(readAnalogSensorData(3)<value_for_white && readAnalogSensorData(2)>value_for_white)
   {
-     motorBackward(2, 20);
-     motorForward(3, 20);
+     motorBackward(2, 50);
+     motorForward(3, 50);
   }
   else if(readAnalogSensorData(3)<value_for_white && readAnalogSensorData(2)<value_for_white)
   {
     state = GOING;
   }  
-  }
 }
 
 void backward()
 {
-  if(readAnalogSensordata(3)>value_for_white)
+  if(readAnalogSensorData(3)>value_for_white)
   {
-  if(readAnalogSensordata(3)>value_for_black)
+  if(readAnalogSensorData(3)>value_for_black)
 {
-  if(readAnalogSensordata(2)>value_for_black)
+  if(readAnalogSensorData(2)>value_for_black)
   {
-     motorBackward(4, 20);
-     motorForward(5, 20);
+     motorBackward(4, 50);
+     motorForward(5, 50);
   }  
 }  
   }
   else
     turn_right_reverse();
-  
-    
 }
   
