@@ -208,6 +208,10 @@ def startSchedule():
     global cur_request
     global cur_command
 
+    if len(requests) == 0:
+        print('No schedule.')
+        return
+
     cur_request = requests[0]
     print('cur_req:',cur_request.id)
     cur_command = command[0]
@@ -218,7 +222,6 @@ def startSchedule():
 
     if (len(requests)==len(command)==0):
         print('computing new schedule.')
-        takeRequest()
         simulating(cur_command)
         addToLog()
         print(cur_request.id,'finished.')
@@ -227,6 +230,7 @@ def startSchedule():
             startSchedule()
         else:
             takeRequest()
+            startSchedule()
         return
     else:
         simulating(cur_command)
@@ -241,7 +245,7 @@ def simulating(cmd):
         print('now doing',c,'at',p,'id',id,'trans')
         if (c == 'F'):
             time.sleep(3)
-            changeGraphs(str(id),'Transition',p,'Follow line')
+            changeGraphs(str(id),'Transition',p,'Following line')
         elif (c == 'B'):
             time.sleep(2)
             changeGraphs(str(id),'Transition',p,'Turning back')
@@ -251,14 +255,18 @@ def simulating(cmd):
         elif (c == 'A'):
             time.sleep(1)
             changeGraphs(str(id),'Transition',p,'Turning left')
+        elif (c == 'U'):
+            time.sleep(2)
+            changeGraphs(str(id),'Transition',p,'Lifting up')
         else:
-            print('Skip')
+            time.sleep(2)
+            changeGraphs(str(id),'Transition',p,'Putting Down')
 
     for (c,p) in exe:
         print('now doing',c,'at',p,'id',id,'exe')
         if (c == 'F'):
             time.sleep(3)
-            changeGraphs(str(id),'Execution',p,'Follow line')
+            changeGraphs(str(id),'Execution',p,'Following line')
         elif (c == 'B'):
             time.sleep(2)
             changeGraphs(str(id),'Execution',p,'Turning back')
@@ -268,8 +276,12 @@ def simulating(cmd):
         elif (c == 'A'):
             time.sleep(1)
             changeGraphs(str(id),'Execution',p,'Turning left')
+        elif (c == 'U'):
+            time.sleep(2)
+            changeGraphs(str(id),'Execution',p,'Lifting up')
         else:
-            print('Skip')
+            time.sleep(2)
+            changeGraphs(str(id),'Execution',p,'Putting Down')
 
 def changeGraphs(id,status,last_node,last_action):
     command = './action \"'+id+'\" \"'+status+'\" \"'+last_node+'\" \"'+last_action+'\"'
