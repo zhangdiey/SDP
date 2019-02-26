@@ -52,7 +52,7 @@ def route_schedule_to_pi_schedule(route_schedule,prev_edge,graph):
                 transition_route.append((rotation,start))
             transition_route.append(('F',end))
             prev_edge=(start,end)
-        transition_route.append(('U',end))
+        transition_route.append(('U',prev_edge[1])) #changed by Moy
         execution_route=[]
         execution_copy=copy.deepcopy(execution)
         execution_copy.pop(0)
@@ -64,6 +64,6 @@ def route_schedule_to_pi_schedule(route_schedule,prev_edge,graph):
                 execution_route.append((rotation,start))
             execution_route.append(('F',end))
             prev_edge=(start,end)
-        execution_route.append(('D',end))
+        execution_route.append(('D',prev_edge[1])) #changed by Moy
         pi_schedule.append((transition_route,execution_route,id))
     return pi_schedule

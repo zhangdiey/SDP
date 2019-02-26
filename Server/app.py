@@ -9,6 +9,8 @@ import ast
 import time
 from request import Request
 import routing
+import threading
+import os
 
 static_dir = "static"
 
@@ -27,6 +29,7 @@ requests_id = []
 buffered_requests = []
 buffered_id = []
 cur_request = None
+cur_command = None
 num_total_valid_request = 0
 
 # store the layout
@@ -61,6 +64,7 @@ alpha = 0.003
 
 @app.route('/')
 def initialize_main():
+    os.system('if [ ! -p /tmp/simulator ]; then mkfifo /tmp/simulator;fi')
     # set two listeners
     try:
         DEMO.child('layout').listen(layoutListener)
@@ -139,48 +143,164 @@ def requestsListener(event):
 
     reqs = DEMO.child('requests').get()
     if (reqs == None):
-        print('Waiting for the first request.')
+        print('Waiting for the first request...')
         return
     if (len(reqs) != num_total_valid_request):
         num_total_valid_request = len(reqs)
-        if requests == []:
+        if requests == [] and DEMO.child('cur_request').child('status').get() == 'False':
             # req is the ID
             for req in reqs:
+                if cur_request is not None and req == cur_request.id:
+                    continue
                 requests_id.append(req)
                 request = makeRequestObject(reqs,req)
                 requests.append(request)
             # Dewi's Code
-            requests.sort(key=(lambda x:x.time))
-            schedule = routing.solve_schedule(last_edge[1],
-                                                set(requests),
-                                                routing.make_request_eval(shortest_paths,
-                                                                                alpha,
-                                                                                requests[len(requests)-1].time))
-            route = routing.schedule_to_route_schedule(last_edge[1],schedule,shortest_paths)
-            command = routing.route_schedule_to_pi_schedule(route,last_edge,layoutGraph)
-            print("Cost original: "),
-            print(routing.schedule_cost(last_edge[1],requests,routing.make_request_eval(shortest_paths,alpha,requests[len(requests)-1].time)))
-            print("Cost alternative: "),
-            print(routing.schedule_cost(last_edge[1],schedule,routing.make_request_eval(shortest_paths,alpha,requests[len(requests)-1].time)))
-            requests=schedule
-            cur_request = requests[0]
-            changeCurRequest(cur_request)
+            makeSchedule()
+            # No need to wait
+            t = threading.Thread(target=startSchedule)
+            t.start()
             print('len of requests',len(requests))
+        # elif requests == [] and DEMO.child('cur_request').child('status').get() == 'True':
+        #     for req in reqs:
+        #         if req in requests_id:
+        #             # print(req,'is already processed.')
+        #             pass
+        #         else:
+        #             if req in buffered_id:
+        #                 pass
+        #                 # print(req,'is already in buffer.')
+        #             else:
+        #                 if req == cur_request.id:
+        #                     continue
+        #                 request = makeRequestObject(reqs,req)
+        #                 buffered_requests.append(request)
+        #                 buffered_id.append(req)
+        #                 print(req,'goes to buffer.')
+        #                 print('len of buffer',len(buffered_requests))
+        #                 takeRequest()
         else:
             for req in reqs:
                 if req in requests_id:
-                    print(req,'is already processed.')
+                    # print(req,'is already processed.')
+                    pass
                 else:
                     if req in buffered_id:
-                        print(req,'is already in buffer.')
+                        pass
+                        # print(req,'is already in buffer.')
                     else:
+                        if req == cur_request.id:
+                            continue
                         request = makeRequestObject(reqs,req)
                         buffered_requests.append(request)
                         buffered_id.append(req)
                         print(req,'goes to buffer.')
             print('len of buffer',len(buffered_requests))
     else:
-        print('No changes in requests.')
+        # print('No changes in requests.')
+        pass
+
+def startSchedule():
+    global requests
+    global command
+    global buffered_requests
+    global requests_id
+    global cur_request
+    global cur_command
+
+    cur_request = requests[0]
+    print('cur_req:',cur_request.id)
+    cur_command = command[0]
+    print('cur_cmd:',cur_command)
+    changeCurRequest(cur_request)
+    requests = requests[1:]
+    command = command[1:]
+
+    if (len(requests)==len(command)==0):
+        print('computing new schedule.')
+        takeRequest()
+        simulating(cur_command)
+        addToLog()
+        print(cur_request.id,'finished.')
+        print('schedule finished.')
+        if(len(requests)>0):
+            startSchedule()
+        else:
+            takeRequest()
+        return
+    else:
+        simulating(cur_command)
+        addToLog()
+        print(cur_request.id,'finished.')
+        startSchedule()
+
+# for simulating
+def simulating(cmd):
+    (trans,exe,id) = cmd
+    for (c,p) in trans:
+        print('now doing',c,'at',p,'id',id,'trans')
+        if (c == 'F'):
+            time.sleep(3)
+            changeGraphs(str(id),'Transition',p,'Follow line')
+        elif (c == 'B'):
+            time.sleep(2)
+            changeGraphs(str(id),'Transition',p,'Turning back')
+        elif (c == 'C'):
+            time.sleep(1)
+            changeGraphs(str(id),'Transition',p,'Turning right')
+        elif (c == 'A'):
+            time.sleep(1)
+            changeGraphs(str(id),'Transition',p,'Turning left')
+        else:
+            print('Skip')
+
+    for (c,p) in exe:
+        print('now doing',c,'at',p,'id',id,'exe')
+        if (c == 'F'):
+            time.sleep(3)
+            changeGraphs(str(id),'Execution',p,'Follow line')
+        elif (c == 'B'):
+            time.sleep(2)
+            changeGraphs(str(id),'Execution',p,'Turning back')
+        elif (c == 'C'):
+            time.sleep(1)
+            changeGraphs(str(id),'Execution',p,'Turning right')
+        elif (c == 'A'):
+            time.sleep(1)
+            changeGraphs(str(id),'Execution',p,'Turning left')
+        else:
+            print('Skip')
+
+def changeGraphs(id,status,last_node,last_action):
+    command = './action \"'+id+'\" \"'+status+'\" \"'+last_node+'\" \"'+last_action+'\"'
+    os.system(command)
+
+def makeSchedule():
+    global requests
+    global command
+    global buffered_requests
+    global requests_id
+    global cur_request
+    global num_total_valid_request
+    global last_edge
+    global shortest_paths
+    global alpha
+
+    requests.sort(key=(lambda x:x.time))
+    schedule = routing.solve_schedule(last_edge[1],
+                                        set(requests),
+                                        routing.make_request_eval(shortest_paths,
+                                                                        alpha,
+                                                                        requests[len(requests)-1].time))
+    route = routing.schedule_to_route_schedule(last_edge[1],schedule,shortest_paths)
+    command = routing.route_schedule_to_pi_schedule(route,last_edge,layoutGraph)
+    # print("Cost original: "),
+    # print(routing.schedule_cost(last_edge[1],requests,routing.make_request_eval(shortest_paths,alpha,requests[len(requests)-1].time)))
+    # print("Cost alternative: "),
+    # print(routing.schedule_cost(last_edge[1],schedule,routing.make_request_eval(shortest_paths,alpha,requests[len(requests)-1].time)))
+    requests=schedule
+    last_edge = (command[-1][1][-3][1],command[-1][1][-2][1])
+    print(last_edge)
 
 def makeRequestObject(reqs,req):
     type = reqs[req]['type']
@@ -210,11 +330,33 @@ def changeCurRequest(request):
 def removeCurRequest():
     DEMO.child('cur_request').update({'status':'False'})
 
+def takeRequest():
+    global requests
+    global buffered_requests
+    global requests_id
+    global buffered_id
+    if (len(buffered_requests)>10):
+        requests = buffered_requests[:9]
+        requests_id = buffered_id[:9]
+        buffered_requests = buffered_requests[9:]
+        buffered_id = buffered_id[9:]
+    else:
+        requests = buffered_requests
+        requests_id = buffered_id
+        buffered_requests = []
+        buffered_id = []
+    if (len(requests)>0):
+        makeSchedule()
+    else:
+        print('No requests in the buffer.')
+
 def addToLog():
     global cur_request
     global requests
-    requests.remove(cur_request)
-    print(len(requests))
+    global num_total_valid_request
+    # requests.remove(cur_request)
+    deleteRequest(cur_request.id)
+    num_total_valid_request = num_total_valid_request - 1
     DEMO.child('log').child(cur_request.id).set(cur_request.__dict__)
     if len(requests)>0:
         cur_request = requests[0]
