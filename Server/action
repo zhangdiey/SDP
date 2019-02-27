@@ -1,0 +1,5 @@
+#!/bin/bash
+printf "\033[H\033[2J" > /tmp/simulator
+printf "Request: $1 | Status $2 | Last Visited Node: $3\n Last Action: $4" > /tmp/simulator
+cat graphs/graph_"$3" > /tmp/simulator
+printf "Schedule: $5" > /tmp/simulator

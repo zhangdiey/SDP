@@ -1,0 +1,62 @@
+wwimport flask
+from flask_jsonpify import jsonify
+import firebase_admin
+from firebase_admin import db
+import requests
+
+static_dir = "static"
+
+app = flask.Flask(__name__, static_folder=static_dir)
+
+firebase_admin.initialize_app(options={
+    'databaseURL': 'https://dumbot-3c243.firebaseio.com/'
+})
+
+DEMO = db.reference('demo1')
+
+# demo1 has two childs:
+# cur_cmd (g or h)
+# alert (True or False)
+
+@app.route('/sendCMD')
+def send_main():
+    cur_cmd = getCurrentCMD()
+    updateAlert(False)
+    sendCMD(cur_cmd)
+    DEMO.child('cur_cmd').listen(listener)
+
+    return cur_cmd
+
+@app.route('/getAlert',methods=['POST'])
+def get_main():
+    status = flask.request.get_json(force=True)['alert']
+    print ('data from client:', status)
+    if (isValidSTATUS(status)):
+        updateAlert(status)
+        return "VALID STATUS"
+    else:
+        return "INVALID STATUS"
+
+def updateAlert(status):
+    DEMO.update({'alert':f'{status}'})
+
+def getCurrentCMD():
+    return DEMO.child('cur_cmd').get()
+
+def isValidSTATUS(status):
+    return status in ['True','False']
+
+def sendCMD(cmd):
+    dictToSend = {'cmd':cmd}
+    res = requests.post('PATAMON/getCMD', json=dictToSend)
+    print ('response from server:', res.text)
+
+def listener(event):
+    # print(event.event_type)  # can be 'put' or 'patch'
+    # print(event.path)  # relative to the reference, it seems
+    # print(event.data)  # new data at /reference/event.path. None if deleted
+    cur_cmd = getCurrentCMD()
+    sendCMD(cur_cmd)
+
+if __name__ == '__main__':
+    app.run(debug=True, host='rudedski', port=1337)

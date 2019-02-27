@@ -1,5 +1,5 @@
 # DumBot
-The University of Edinrbugh SDP group project
+The University of Edinburgh SDP group project
 
 ## Environment and Tools
 ### PI <br/>
@@ -18,4 +18,8 @@ pip install firebase-admin flask
 
 export GOOGLE_APPLICATION_CREDENTIALS=path/to/creds.json
 ```
+<br>
+It is currently testing on localhost not PI.
+Tested for python 3.7
+
 ### APP <br/>
