@@ -31,6 +31,7 @@ buffered_id = []
 cur_request = None
 cur_command = None
 num_total_valid_request = 0
+request_id_list = []
 
 # store the layout
 layoutGraph = nx.Graph()
@@ -43,7 +44,10 @@ command = []
 last_edge = ('SA2','5')
 
 # hyper-parameters
-alpha = 0.003
+alpha = 3
+
+# emergency stop
+stop = 'False'
 
 # demo2 has five childs:
 # cur_request (json)
@@ -69,6 +73,7 @@ def initialize_main():
     try:
         DEMO.child('layout').listen(layoutListener)
         DEMO.child('requests').listen(requestsListener)
+        DEMO.child('alert').listen(stopListner)
     except Exception as e:
         print(e)
         return "Failed to initialize. Error {e}."
@@ -108,6 +113,33 @@ def sendCMD(cmd):
 #     # print(event.data)  # new data at /reference/event.path. None if deleted
 #     cur_cmd = getCurrentCMD()
 #     sendCMD(cur_cmd)
+
+def stopListner(event):
+    global stop
+    global requests
+    global requests_id
+    global buffered_requests
+    global buffered_id
+    global cur_request
+    global cur_command
+    global num_total_valid_request
+    global command
+    global last_edge
+
+    requests = []
+    requests_id = []
+    buffered_requests = []
+    buffered_id = []
+    cur_request = None
+    cur_command = None
+    num_total_valid_request = 0
+    command = []
+    last_edge = ('SA2','5')
+
+    stop = DEMO.child('alert').get()
+    DEMO.child('requests').delete()
+
+    removeCurRequest()
 
 def layoutListener(event):
     # print(event.event_type)  # can be 'put' or 'patch'
@@ -207,6 +239,8 @@ def startSchedule():
     global requests_id
     global cur_request
     global cur_command
+    global stop
+    global request_id_list
 
     if len(requests) == 0:
         print('No schedule.')
@@ -215,6 +249,7 @@ def startSchedule():
     cur_request = requests[0]
     print('cur_req:',cur_request.id)
     cur_command = command[0]
+    request_id_list = [id for (x,y,id) in command]
     print('cur_cmd:',cur_command)
     changeCurRequest(cur_request)
     requests = requests[1:]
@@ -223,8 +258,10 @@ def startSchedule():
     if (len(requests)==len(command)==0):
         print('computing new schedule.')
         simulating(cur_command)
+        if stop == 'True':
+            return
         addToLog()
-        print(cur_request.id,'finished.')
+        print(cur_request.id,'finished at time',time.time())
         print('schedule finished.')
         if(len(requests)>0):
             startSchedule()
@@ -234,57 +271,66 @@ def startSchedule():
         return
     else:
         simulating(cur_command)
+        if stop == 'True':
+            return
         addToLog()
-        print(cur_request.id,'finished.')
+        print(cur_request.id,'finished at time',time.time())
         startSchedule()
 
 # for simulating
 def simulating(cmd):
+    global stop
+    global request_id_list
     (trans,exe,id) = cmd
     for (c,p) in trans:
+        print(stop)
+        if stop == 'True':
+            return
         print('now doing',c,'at',p,'id',id,'trans')
         if (c == 'F'):
             time.sleep(3)
-            changeGraphs(str(id),'Transition',p,'Following line')
+            changeGraphs(str(id),'Transition',p,'Following line',request_id_list)
         elif (c == 'B'):
             time.sleep(2)
-            changeGraphs(str(id),'Transition',p,'Turning back')
+            changeGraphs(str(id),'Transition',p,'Turning back',request_id_list)
         elif (c == 'C'):
             time.sleep(1)
-            changeGraphs(str(id),'Transition',p,'Turning right')
+            changeGraphs(str(id),'Transition',p,'Turning right',request_id_list)
         elif (c == 'A'):
             time.sleep(1)
-            changeGraphs(str(id),'Transition',p,'Turning left')
+            changeGraphs(str(id),'Transition',p,'Turning left',request_id_list)
         elif (c == 'U'):
             time.sleep(2)
-            changeGraphs(str(id),'Transition',p,'Lifting up')
+            changeGraphs(str(id),'Transition',p,'Lifting up',request_id_list)
         else:
             time.sleep(2)
-            changeGraphs(str(id),'Transition',p,'Putting Down')
+            changeGraphs(str(id),'Transition',p,'Putting Down',request_id_list)
 
     for (c,p) in exe:
         print('now doing',c,'at',p,'id',id,'exe')
+        if stop == 'True':
+            return
         if (c == 'F'):
             time.sleep(3)
-            changeGraphs(str(id),'Execution',p,'Following line')
+            changeGraphs(str(id),'Execution',p,'Following line',request_id_list)
         elif (c == 'B'):
             time.sleep(2)
-            changeGraphs(str(id),'Execution',p,'Turning back')
+            changeGraphs(str(id),'Execution',p,'Turning back',request_id_list)
         elif (c == 'C'):
             time.sleep(1)
-            changeGraphs(str(id),'Execution',p,'Turning right')
+            changeGraphs(str(id),'Execution',p,'Turning right',request_id_list)
         elif (c == 'A'):
             time.sleep(1)
-            changeGraphs(str(id),'Execution',p,'Turning left')
+            changeGraphs(str(id),'Execution',p,'Turning left',request_id_list)
         elif (c == 'U'):
             time.sleep(2)
-            changeGraphs(str(id),'Execution',p,'Lifting up')
+            changeGraphs(str(id),'Execution',p,'Lifting up',request_id_list)
         else:
             time.sleep(2)
-            changeGraphs(str(id),'Execution',p,'Putting Down')
+            changeGraphs(str(id),'Execution',p,'Putting Down',request_id_list)
 
-def changeGraphs(id,status,last_node,last_action):
-    command = './action \"'+id+'\" \"'+status+'\" \"'+last_node+'\" \"'+last_action+'\"'
+def changeGraphs(id,status,last_node,last_action,request_id_list):
+    command = './action \"'+id+'\" \"'+status+'\" \"'+last_node+'\" \"'+last_action+'\" \"' + str(request_id_list) +'\"'
     os.system(command)
 
 def makeSchedule():
