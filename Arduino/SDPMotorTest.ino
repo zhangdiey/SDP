@@ -1,289 +1,142 @@
 #include "SDPArduino.h"
-#include "GroveColorSensor.h"
 #include <Wire.h>
-#define GOING 3
-#define OBSTRUCTED 1
-#define HALTED 0
-#define OBSTRUCTED_CLEARING 2
-#define TURNING 4
-
-#define value_for_black 600
-#define value_for_white 100
-#define value_for_red
-#define value_for_green
-#define value_for_blue
-
-#define value_for_blue_upper
-#define value_for_blue_lower
-
-#define left 'a'
-#define right 'c'
-#define forward 'f'
-#define backward 'b' //it is actually for turn 180 degrees
-
-//the right greyscale sensor number 2
-//the left greyscale sensor number 3
-
-/* 
- * 2 is top right whee
- * 3 is bottom right
- * 5 is bottom left
- * and 4 is top left
- */
-
-unsigned long timeUntilThresholdDistance = 3000;
-int trigpin = 3;
-int echopin = A3;
-long duration;
-
-unsigned long obstructionTilHalt = 10000;
-unsigned long timeTilClear = 700;
-int state = HALTED;
-unsigned long timeOfObstruction;
-unsigned long timeOfClearing;
-
-int red, green, blue;
-  GroveColorSensor colorSensor;
-char turning_state = forward;
+int i = 0;
 
 void setup(){
   SDPsetup();
-  delay(3000);
   helloWorld();
-  colorSensor.ledStatus = 1;
 }
-
-
 
 void loop(){
-  switch(state){
-    case GOING:
-      if(obstructed()){
-        halt();
-        state=OBSTRUCTED;
-        timeOfObstruction=millis();
-        Serial.write('o');
-      }
-      else{
-        detectSpot();
-        followLine();
-      }
-      break;
-    case OBSTRUCTED:
-      if(obstructed()){
-        if(millis()-timeOfObstruction > obstructionTilHalt){
-          state=HALTED;
-          Serial.write('O');
-        }
-      }
-      else{
-        timeOfClearing = millis();
-        state=OBSTRUCTED_CLEARING;
-      }
-      break;
-    case OBSTRUCTED_CLEARING:
-        if(obstructed()){
-          state=OBSTRUCTED;
-        }
-        else if(millis()-timeOfClearing>timeTilClear ){
-          state=GOING;
-          Serial.write('c');
-        }
-        break;
-     case HALTED: 
-        break;
-     case TURNING:
-       turn();       
-  }
-}
-int obstructed(){
-    for (int attempt = 0;attempt<1;attempt++){
-      digitalWrite(trigpin, LOW);
-      delayMicroseconds(5);
-      digitalWrite(trigpin, HIGH);
-      delayMicroseconds(10);
-      digitalWrite(trigpin, LOW);
-      if (pulseIn(echopin, HIGH, timeUntilThresholdDistance)){
-        return true;
-      }
-    }
-   return false;
-}
-void halt(){
- motorAllStop();
-}
-void detectSpot(){
-  GroveColorSensor colorSensor;
-  colorSensor.ledStatus = 1;
-  colorSensor.readRGB(&red, &green, &blue);
-}
-  
-void followLine(){
-  if(readAnalogSensorData(3)>value_for_black)
-  {
-    motorBackward(2, 20);
-    motorForward(3, 20);
-  }
-  else if(readAnalogSensorData(2)>value_for_black)
-  {
-     motorBackward(4, 20);
-     motorForward(5, 20);
-  }
-  else if(readAnalogSensorData(3)<value_for_white && readAnalogSensorData(2)<value_for_white)
-  {
-    motorBackward(2, 100);
-    motorBackward(4, 100);
-    motorForward(5, 100);
-    motorForward(3, 100);
-  }
- 
-}
+Serial.println("All Motors Forward 50%");
+motorForward(0, 50);
+motorForward(1, 50);
+motorForward(2, 50);
+motorForward(3, 50);
+motorForward(4, 50);
+motorForward(5, 50);
+delay(2500);
+Serial.println("All Motors Forwards 100%");
+motorForward(0, 100);
+motorForward(1, 100);
+motorForward(2, 100);
+motorForward(3, 100);
+motorForward(4, 100);
+motorForward(5, 100);
+delay(2500);
+Serial.println("All Motors Backwards 50%");
+motorBackward(0, 50);
+motorBackward(1, 50);
+motorBackward(2, 50);
+motorBackward(3, 50);
+motorBackward(4, 50);
+motorBackward(5, 50);
+delay(2500);
+Serial.println("All Motors Backwards 100%");
+motorBackward(0, 100);
+motorBackward(1, 100);
+motorBackward(2, 100);
+motorBackward(3, 100);
+motorBackward(4, 100);
+motorBackward(5, 100);
+delay(2500);
+Serial.println("All Motors Stop");
+motorAllStop();
+delay(2500);
 
-void detectStop()
-{
-  colorSensor.readRGB(&red, &green, &blue);
-  if(red < color_for_red && green < color_for_green && blue > color_for_blue)
-  {
-    Serial.write('n');
-    state = TURNING;
-  }
-}
+Serial.println("Motor 0 Forward 50%");
+motorForward(0, 50);
+delay(2500);
+Serial.println("Motor 0 Forwards 100%");
+motorForward(0, 100);
+delay(2500);
+Serial.println("Motor 0 Backwards 50%");
+motorBackward(0, 50);
+delay(2500);
+Serial.println("Motor 0 Backwards 100%");
+motorBackward(0, 100);
+delay(2500);
+Serial.println("Motor 0 Stop");
+motorStop(0);
+delay(2500);
 
-void serialEvent(){
-  switch(Serial.read()){
-    case 'g':
-      state=GOING;
-      Serial.println("state = going");
-      break;
-    case 'h':
-      halt();
-      state=HALTED;
-      Serial.println("state = halted");
-      break;
-    case 'a':
-      turning_state = 'a';
-      break;
-    case 'b':
-      turning_state = 'b':
-      break;
-    case 'c':
-      turning_state = 'c';
-      break;
-    case 'f':
-      turning_state = 'f';
-      break;            
-  }
-}
+Serial.println("Motor 1 Forward 50%");
+motorForward(1, 50);
+delay(2500);
+Serial.println("Motor 1 Forwards 100%");
+motorForward(1, 100);
+delay(2500);
+Serial.println("Motor 1 Backwards 50%");
+motorBackward(1, 50);
+delay(2500);
+Serial.println("Motor 1 Backwards 100%");
+motorBackward(1, 100);
+delay(2500);
+Serial.println("Motor 1 Stop");
+motorStop(1);
+delay(2500);
 
-void turn()
-{
-   switch(turning_state)
-   {
-     case 'a':
-       turn_left();
-     case 'b':
-       backward();
-     case 'c':
-       turn_right();
-     case 'f':
-       forward();
-   }
-}
+Serial.println("Motor 2 Forward 50%");
+motorForward(2, 50);
+delay(2500);
+Serial.println("Motor 2 Forwards 100%");
+motorForward(2, 100);
+delay(2500);
+Serial.println("Motor 2 Backwards 50%");
+motorBackward(2, 50);
+delay(2500);
+Serial.println("Motor 2 Backwards 100%");
+motorBackward(2, 100);
+delay(2500);
+Serial.println("Motor 2 Stop");
+motorStop(2);
+delay(2500);
 
-void turn_right()
-{
-  if(readAnalogSensorData(3)>value_for_black)
-{
-  if(readAnalogSensorData(2)>value_for_black)
-  {
-     motorBackward(4, 20);
-     motorForward(5, 20);
-  }  
-}  
-  else if(readAnalogSensorData(3)<value_for_white)
-    state = GOING;
-}
+Serial.println("Motor 3 Forward 50%");
+motorForward(3, 50);
+delay(2500);
+Serial.println("Motor 3 Forwards 100%");
+motorForward(3, 100);
+delay(2500);
+Serial.println("Motor 3 Backwards 50%");
+motorBackward(3, 50);
+delay(2500);
+Serial.println("Motor 3 Backwards 100%");
+motorBackward(3, 100);
+delay(2500);
+Serial.println("Motor 3 Stop");
+motorStop(3);
+delay(2500);
 
-void turn_left()
-{
-  if(readAnalogSensorData(2)>value_for_black)
-  {
-    if(readAnalogSensorData(3)>value_for_black)
-  {
-    motorBackward(2, 20);
-    motorForward(3, 20);
-  }
-  }
-  else if(readAnalogSensorData(2)<value_for_white)
-    state = GOING;  
-}
+Serial.println("Motor 4 Forward 50%");
+motorForward(4, 50);
+delay(2500);
+Serial.println("Motor 4 Forwards 100%");
+motorForward(4, 100);
+delay(2500);
+Serial.println("Motor 4 Backwards 50%");
+motorBackward(4, 50);
+delay(2500);
+Serial.println("Motor 4 Backwards 100%");
+motorBackward(4, 100);
+delay(2500);
+Serial.println("Motor 4 Stop");
+motorStop(4);
+delay(2500);
 
-void turn_right_reverse()
-{
-    if(readAnalogSensorData(2)>value_for_black)
-  {
-    if(readAnalogSensorData(3)>value_for_black)
-  {
-    motorForward(2, 20);
-    motorBackward(3, 20);
-  }
-  }
-  else if(readAnalogSensorData(2) <value_for_white)
-    state = GOING;  
+Serial.println("Motor 5 Forward 50%");
+motorForward(5, 50);
+delay(2500);
+Serial.println("Motor 5 Forwards 100%");
+motorForward(5, 100);
+delay(2500);
+Serial.println("Motor 5 Backwards 50%");
+motorBackward(5, 50);
+delay(2500);
+Serial.println("Motor 5 Backwards 100%");
+motorBackward(5, 100);
+delay(2500);
+Serial.println("Motor 5 Stop");
+motorStop(5);
+delay(2500);
 }
-
-void forward()
-{
-  if(readAnalogSensorData(3)>value_for_blue_lower && readAnalogSensorData(3)<value_for_blue_upper)
-  {
-    motorBackward(2, 20);
-    motorForward(3, 20);
-  }
-  else if(readAnalogSensorData(2)>value_for_blue_lower && readAnalogSensorData(2)<value_for_blue_upper)
-  {
-     motorBackward(4, 20);
-     motorForward(5, 20);
-  }
-  else if(readAnalogSensorData(2)<value_for_blue_lower || readAnalogSensorData(2)>value_for_blue_upper||readAnalogSensorData(3)<value_for_blue_lower || readAnalogSensorData(3)>value_for_blue_upper)
-  {
-    motorBackward(2, 100);
-    motorBackward(4, 100);
-    motorForward(5, 100);
-    motorForward(3, 100);
-  }
-  else if(readAnalogSensorData(2)<value_for_white && readAnalogSensorData(3)>value_for_white)
-  {
-     motorBackward(4, 20);
-     motorForward(5, 20);
-  }
-  else if(readAnalogSensorData(3)<value_for_white && readAnalogSensorData(2)>value_for_white)
-  {
-     motorBackward(2, 20);
-     motorForward(3, 20);
-  }
-  else if(readAnalogSensorData(3)<value_for_white && readAnalogSensorData(2)<value_for_white)
-  {
-    state = GOING;
-  }  
-  }
-}
-
-void backward()
-{
-  if(readAnalogSensordata(3)>value_for_white)
-  {
-  if(readAnalogSensordata(3)>value_for_black)
-{
-  if(readAnalogSensordata(2)>value_for_black)
-  {
-     motorBackward(4, 20);
-     motorForward(5, 20);
-  }  
-}  
-  }
-  else
-    turn_right_reverse();
-  
-    
-}
-  
