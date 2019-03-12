@@ -17,6 +17,12 @@ unsigned long timeBlue;
 bool detected = false;
 int state_turn = -1;
 
+int state_corner_turn = -1;
+#define turn_right_90 0
+#define turn_left_90 1
+#define turn_right_180 2
+#define turn_left_180 3
+
 bool blue_spot = false;
 
 void setup(){
@@ -41,9 +47,7 @@ void loop(){
   }
   else
   {
-     motorAllStop();
-     delay(2500);
-     blue_spot = false;    
+     stationary_turn();
   }
 }
 
@@ -64,7 +68,6 @@ void detectBlack(){
   {
     state_turn = go_forward;
   }
- 
 }
 void followLine()
 {
@@ -101,4 +104,49 @@ if(millis()-timeDetected < time_check && detected)
 }
 else
 detected = false;
+}
+
+
+int state_count = 0;
+void stationary_turn()
+{
+    switch(state_corner_turn)
+    {
+        case turn_right_90:
+            motorBackward(5, 75);
+            motorForward(4, 75);
+            motorBackward(3, 75);
+            motorForward(2, 75);
+            if(readAnalogSensorData(3)>value_for_black && readAnalogSensorData(2) < value_for_white)
+                state_count++;
+            if(state_count == 1 && readAnalogSensorData(3)<value_for_white && readAnalogSensorData(2) < value_for_white)
+                state_count++;
+            if(state_count == 1 && readAnalogSensorData(3)<value_for_white && readAnalogSensorData(2) > value_for_black)
+                state_count++;
+            if(state_count == 3 && readAnalogSensorData(3)<value_for_white && readAnalogSensorData(2) < value_for_white)
+            {
+                motorAllStop();
+                delay(50);
+                state_count = 0;
+            }
+            break;
+        case turn_left_90:
+            motorBackward(3, 75);
+            motorForward(2, 75);
+            motorBackward(5, 75);
+            motorForward(4, 75);
+            if(readAnalogSensorData(2)>value_for_black && readAnalogSensorData(3) < value_for_white)
+                state_count++;
+            if(state_count == 1 && readAnalogSensorData(2)<value_for_white && readAnalogSensorData(3) < value_for_white)
+                state_count++;
+            if(state_count == 1 && readAnalogSensorData(2)<value_for_white && readAnalogSensorData(3) > value_for_black)
+                state_count++;
+            if(state_count == 3 && readAnalogSensorData(2)<value_for_white && readAnalogSensorData(3) < value_for_white)
+            {
+                motorAllStop();
+                delay(50);
+                state_count = 0;
+            }
+            break;
+    }
 }
