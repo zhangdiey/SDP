@@ -8,6 +8,7 @@ int red, blue, green;
 
 unsigned long timeDetected;
 unsigned long timeBlue;
+unsigned long timeStationary;
 #define value_for_blue 40
 #define time_check 50
 #define time_stop 5
@@ -25,6 +26,7 @@ int state_corner_turn = -1;
 int state_count = 0;
 
 bool blue_spot = false;
+bool turn_finished = false;
 
 void setup(){
   SDPsetup();
@@ -33,24 +35,9 @@ void setup(){
 }
 
 void loop(){
-      GroveColorSensor colorSensor;
-  colorSensor.ledStatus = 1;
-  colorSensor.readRGB(&red,&green,&blue);
-  if(red)
-  
-  /*if(millis() < 500)
-  {
-    motorBackward(5, 100);
-    motorBackward(3, 100);
-    motorForward(2, 100);
-    motorForward(4, 100);
-  }
-  else
-  motorAllStop();
     GroveColorSensor colorSensor;
-  colorSensor.ledStatus = 1;
-  colorSensor.readRGB(&red,&green,&blue);
-  Serial.println(blue);
+    colorSensor.ledStatus = 1;
+    colorSensor.readRGB(&red,&green,&blue);
   if(blue > value_for_blue )
   {
     blue_spot = true;
@@ -62,8 +49,11 @@ void loop(){
   }
   else
   {
+     motorAllStop();
+     delay(50);
      stationary_turn();
-  }*/
+     timeStationary = millis();
+  }
 }
 
 void detectBlack(){
@@ -110,10 +100,7 @@ if(millis()-timeDetected < time_check && detected)
     motorForward(4, 100);
     break;
   case go_forward:
-    motorBackward(5, 100);
-    motorBackward(3, 100);
-    motorForward(2, 100);
-    motorForward(4, 100);
+
     break;
 }
 }
@@ -121,45 +108,82 @@ else
 detected = false;
 }
 
+int turn_count = 0;
+
 void stationary_turn()
 {
+    if(millis() - timeStationary < 500)
+    {
+        motorBackward(5, 100);
+        motorBackward(3, 100);
+        motorForward(2, 100);
+        motorForward(4, 100);
+    }
     switch(state_corner_turn)
     {
         case turn_right_90:
-            motorBackward(5, 75);
-            motorForward(4, 75);
-            motorBackward(3, 75);
-            motorForward(2, 75);
-            if(readAnalogSensorData(3)>value_for_black && readAnalogSensorData(2) < value_for_white)
-                state_count++;
-            if(state_count == 1 && readAnalogSensorData(3)<value_for_white && readAnalogSensorData(2) < value_for_white)
-                state_count++;
-            if(state_count == 1 && readAnalogSensorData(3)<value_for_white && readAnalogSensorData(2) > value_for_black)
-                state_count++;
-            if(state_count == 3 && readAnalogSensorData(3)<value_for_white && readAnalogSensorData(2) < value_for_white)
+            turn_right_90_func();
+            if(turn_finished)
             {
-                motorAllStop();
-                delay(50);
-                state_count = 0;
+                turn_finished = false;
+                break;
             }
-            break;
         case turn_left_90:
-            motorBackward(3, 75);
-            motorForward(2, 75);
-            motorBackward(5, 75);
-            motorForward(4, 75);
-            if(readAnalogSensorData(2)>value_for_black && readAnalogSensorData(3) < value_for_white)
-                state_count++;
-            if(state_count == 1 && readAnalogSensorData(2)<value_for_white && readAnalogSensorData(3) < value_for_white)
-                state_count++;
-            if(state_count == 1 && readAnalogSensorData(2)<value_for_white && readAnalogSensorData(3) > value_for_black)
-                state_count++;
-            if(state_count == 3 && readAnalogSensorData(2)<value_for_white && readAnalogSensorData(3) < value_for_white)
+            turn_left_90_func();
+            if(turn_finished)
             {
-                motorAllStop();
-                delay(50);
-                state_count = 0;
+                turn_finished = false;
+                break;
             }
-            break;
+        case turn_right_180:
+            if(i == 0)
+                turn_right_90_func();
+            else if(i == 1 && !turn_finished)
+                turn_right_90_func();
+             else if(i == 1 && turn_finished)
+             {
+                turn_finished = false;
+                i = 0;
+                break;
+             }
+        case turn_left_180:
+            if(i == 0)
+                turn_right_90_func();
+            else if(i == 1 && !turn_finished)
+                turn_right_90_func();
+             else if(i == 1 && turn_finished)
+             {
+                turn_finished = false;
+                i = 0;
+                break;
+             }
     }
+}
+
+void turn_right_90_func()
+{
+    if(red < 70 && green < 70 && blue < 20)
+     {
+        motorAllStop();
+        turn_finished = true;
+     }
+     else
+     {
+         motorForward(2, 100);
+         motorBackward(4, 100);
+      }
+}
+
+void turn_left_90_func()
+{
+    if(red < 70 && green < 70 && blue < 20)
+     {
+        motorAllStop();
+        turn_finished = true;
+     }
+     else
+     {
+         motorBackward(2, 100);
+         motorForward(4, 100);
+      }
 }
