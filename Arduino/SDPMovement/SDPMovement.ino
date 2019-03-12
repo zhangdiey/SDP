@@ -22,6 +22,7 @@ int state_corner_turn = -1;
 #define turn_left_90 1
 #define turn_right_180 2
 #define turn_left_180 3
+int state_count = 0;
 
 bool blue_spot = false;
 
@@ -32,6 +33,20 @@ void setup(){
 }
 
 void loop(){
+      GroveColorSensor colorSensor;
+  colorSensor.ledStatus = 1;
+  colorSensor.readRGB(&red,&green,&blue);
+  if(red)
+  
+  /*if(millis() < 500)
+  {
+    motorBackward(5, 100);
+    motorBackward(3, 100);
+    motorForward(2, 100);
+    motorForward(4, 100);
+  }
+  else
+  motorAllStop();
     GroveColorSensor colorSensor;
   colorSensor.ledStatus = 1;
   colorSensor.readRGB(&red,&green,&blue);
@@ -48,7 +63,7 @@ void loop(){
   else
   {
      stationary_turn();
-  }
+  }*/
 }
 
 void detectBlack(){
@@ -106,8 +121,6 @@ else
 detected = false;
 }
 
-
-int state_count = 0;
 void stationary_turn()
 {
     switch(state_corner_turn)
