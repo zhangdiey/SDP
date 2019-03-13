@@ -7,27 +7,10 @@
 #define OBSTRUCTED_CLEARING 2
 #define TURNING 4
 
-#define value_for_black 600
-#define value_for_white 100
-#define value_for_red
-#define value_for_green
-#define value_for_blue
-
-#define value_for_blue_upper
-#define value_for_blue_lower
-
 #define left 'a'
 #define right 'c'
 #define forward 'f'
 #define backward 'b' //it is actually for turn 180 degrees
-
-//the right greyscale sensor number 2
-//the left greyscale sensor number 3
-
-unsigned long timeUntilThresholdDistance = 3000;
-int trigpin = 3;
-int echopin = A3;
-long duration;
 
 unsigned long obstructionTilHalt = 10000;
 unsigned long timeTilClear = 700;
@@ -35,15 +18,40 @@ int state = HALTED;
 unsigned long timeOfObstruction;
 unsigned long timeOfClearing;
 
-int red, green, blue;
-  GroveColorSensor colorSensor;
-char turning_state = forward;
+#define value_for_black 400
+#define value_for_white 100
+int i = 0;
+int red, blue, green;
+
+unsigned long timeDetected;
+unsigned long timeBlue;
+unsigned long timeStationary;
+#define value_for_blue 40
+#define time_check 50
+#define time_stop 5
+
+#define turn_left 0
+#define turn_right 1
+#define go_forward 2
+bool detected = false;
+int state_turn = -1;
+int turn_count = 0;
+
+int state_corner_turn = -1;
+#define turn_right_90 0
+#define turn_left_90 1
+#define turn_right_180 2
+#define turn_left_180 3
+int state_count = 0;
+
+bool blue_spot = false;
+bool turn_finished = false;
+
 
 void setup(){
   SDPsetup();
   delay(3000);
   helloWorld();
-  colorSensor.ledStatus = 1;
 }
 
 
@@ -86,28 +94,36 @@ void loop(){
      case HALTED: 
         break;
      case TURNING:
+        stationary_turn();
+        break;
   }
 }
 int obstructed(){
-    for (int attempt = 0;attempt<1;attempt++){
-      digitalWrite(trigpin, LOW);
-      delayMicroseconds(5);
-      digitalWrite(trigpin, HIGH);
-      delayMicroseconds(10);
-      digitalWrite(trigpin, LOW);
-      if (pulseIn(echopin, HIGH, timeUntilThresholdDistance)){
+    if(readAnalogSensorData(1) > 170)
         return true;
-      }
-    }
    return false;
 }
 void halt(){
  motorAllStop();
 }
 void detectSpot(){
-  GroveColorSensor colorSensor;
-  colorSensor.ledStatus = 1;
-  colorSensor.readRGB(&red, &green, &blue);
+    GroveColorSensor colorSensor;
+    colorSensor.ledStatus = 1;
+    colorSensor.readRGB(&red,&green,&blue);
+  if(blue > value_for_blue )
+  {
+    blue_spot = true;
+  }
+  if(!blue_spot)
+  {
+    followLine();
+  }
+  else
+  {
+     motorAllStop();
+     delay(50);
+     state = TURNING;
+  }
 }
 
 void serialEvent(){
@@ -122,16 +138,146 @@ void serialEvent(){
       Serial.println("state = halted");
       break;
     case 'a':
-      turning_state = 'a';
+      state_corner_turn = turn_left_90;
       break;
     case 'b':
-      turning_state = 'b':
+
       break;
     case 'c':
-      turning_state = 'c';
-      break;
+     state_corner_turn = turn_right_90
+     break;
     case 'f':
       turning_state = 'f';
       break;            
   }
+}
+
+void detectBlack(){
+  if(readAnalogSensorData(3)>value_for_black)
+  {
+    state_turn = turn_right;
+    timeDetected = millis();
+    detected = true;
+  }
+  else if(readAnalogSensorData(2)>value_for_black)
+  {
+    state_turn = turn_left;
+    timeDetected = millis();
+    detected = true;
+  }
+  else if(readAnalogSensorData(3)<value_for_white && readAnalogSensorData(2)<value_for_white)
+  {
+    state_turn = go_forward;
+  }
+}
+
+void followLine()
+{
+    if(!detected)
+  {
+    detectBlack();
+    motorBackward(5, 100);
+    motorBackward(3, 100);
+    motorForward(2, 100);
+    motorForward(4, 100);
+  }
+if(millis()-timeDetected < time_check && detected)
+{
+  switch(state_turn){
+  case turn_right:
+    motorBackward(5, 25);
+    motorForward(4, 25);
+    motorBackward(3, 100);
+    motorForward(2, 100);
+    break;
+  case turn_left:
+    motorBackward(3, 25);
+    motorForward(2, 25);
+    motorBackward(5, 100);
+    motorForward(4, 100);
+    break;
+  case go_forward:
+    break;
+}
+}
+else
+detected = false;
+}
+
+void stationary_turn()
+{
+    if(millis() - timeStationary < 500)
+    {
+        motorBackward(5, 100);
+        motorBackward(3, 100);
+        motorForward(2, 100);
+        motorForward(4, 100);
+    }
+    switch(state_corner_turn)
+    {
+        case turn_right_90:
+            turn_right_90_func();
+            if(turn_finished)
+            {
+                turn_finished = false;
+                break;
+            }
+        case turn_left_90:
+            turn_left_90_func();
+            if(turn_finished)
+            {
+                turn_finished = false;
+                break;
+            }
+        case turn_right_180:
+            if(i == 0)
+                turn_right_90_func();
+            else if(i == 1 && !turn_finished)
+                turn_right_90_func();
+             else if(i == 1 && turn_finished)
+             {
+                turn_finished = false;
+                i = 0;
+                break;
+             }
+        case turn_left_180:
+            if(i == 0)
+                turn_right_90_func();
+            else if(i == 1 && !turn_finished)
+                turn_right_90_func();
+             else if(i == 1 && turn_finished)
+             {
+                turn_finished = false;
+                i = 0;
+                break;
+             }
+    }
+}
+
+void turn_right_90_func()
+{
+    if(red < 70 && green < 70 && blue < 20)
+     {
+        motorAllStop();
+        turn_finished = true;
+     }
+     else
+     {
+         motorForward(2, 100);
+         motorBackward(4, 100);
+      }
+}
+
+void turn_left_90_func()
+{
+    if(red < 70 && green < 70 && blue < 20)
+     {
+        motorAllStop();
+        turn_finished = true;
+     }
+     else
+     {
+         motorBackward(2, 100);
+         motorForward(4, 100);
+      }
 }
