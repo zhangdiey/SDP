@@ -28,6 +28,8 @@ int state_corner_turn = 2;
 #define turn_left_180 3
 int state_count = 0;
 
+int node_count = 0;
+
 int state = 2;
 
 #define TURNING 1
@@ -44,15 +46,7 @@ void setup()
 }
 
 void loop(){
-  /*
-  Serial.print("state:");
-  Serial.print(state);
-  Serial.print("  red:");
-  Serial.print(red);
-  Serial.print("  blue:");
-  Serial.print(blue);
-  Serial.print("  green:");
-  Serial.println(green);
+
   GroveColorSensor colorSensor;
   colorSensor.ledStatus = 1;
   colorSensor.readRGB(&red,&green,&blue);;
@@ -64,20 +58,35 @@ void loop(){
       followLine();
       detectSpot();
       break;
-  }*/
-  Serial.println(digitalRead(3));
-  delay(150);
+  }
 }
 
 void detectSpot()
 {
   if(readAnalogSensorData(3)>value_for_black && readAnalogSensorData(2)>value_for_black)
   {
-    blue_spot = true;
+    node_count ++;
     motorAllStop();
     delay(500);
     timeStationary = millis();
     state = TURNING;
+    switch(node_count):
+        {
+            case 1:
+                state_corner_turn = turn_right_90;
+                break;
+            case 2:
+                state = GOING;
+                break;
+            case 3:
+                 state = GOING;
+                 break;
+            case 4:
+                  state_corner_turn = turn_left_90;
+                  break;
+            case 5:
+                   state = GOING;
+        }
   }
   else
   {
@@ -97,10 +106,6 @@ void detectBlack(){
     state_turn = turn_left;
     timeDetected = millis();
     detected = true;
-  }
-  else if(readAnalogSensorData(3)<value_for_white && readAnalogSensorData(2)<value_for_white)
-  {
-    state_turn = go_forward;
   }
 }
 
@@ -128,8 +133,6 @@ if(millis()-timeDetected < time_check && detected)
     motorForward(2, 25);
     motorBackward(5, 100);
     motorForward(4, 100);
-    break;
-  case go_forward:
     break;
 }
 }
