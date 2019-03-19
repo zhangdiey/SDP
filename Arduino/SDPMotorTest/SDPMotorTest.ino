@@ -66,8 +66,6 @@ void loop(){
     switch(state){
     case GOING:
         detectSpot();
-        followLine();
-        obstructed();
       break;
     case OBSTRUCTED:
       if(obstructed()){
@@ -148,22 +146,6 @@ void read_color()
   colorSensor.readRGB(&red,&green,&blue);
 }
 
-void detectSpot()
-{
-  if(readAnalogSensorData(3)>value_for_black && readAnalogSensorData(2)>value_for_black)
-  {
-    blue_spot = true;
-    motorAllStop();
-    delay(500);
-    state = ONWAIT;
-  }
-  else
-  {
-    followLine();
-  }
-}
-
-
 void serialEvent(){
   switch(Serial.read()){
     case 'A':
@@ -191,6 +173,39 @@ void serialEvent(){
       break;
   }
 }
+ 
+bool first_black = false;
+unsigned long timeFirstBlack;
+
+void detectSpot()
+{
+  if(readAnalogSensorData(3)>value_for_black && readAnalogSensorData(2)>value_for_black && !first_black)
+  {
+    motorAllStop();
+    first_black = true;
+    timeFirstBlack = millis();
+  }
+  else if(readAnalogSensorData(0) > value_for_black && first_black)
+    {
+      state = ONWAIT;
+      first_black = false;
+  }
+  else if(first_black && readAnalogSensorData(0) < value_for_white)
+    {
+      if(millis() - timeFirstBlack < 500)
+        {
+          motorAllStop();
+        }
+       else if(millis() - timeFirstBlack > 500)
+       {
+          followLine_slow();
+       }
+    }
+  else
+  {
+    followLine();
+  }
+}
 
 void detectBlack(){
   if(readAnalogSensorData(3)>value_for_black)
@@ -207,30 +222,62 @@ void detectBlack(){
   }
 }
 
-void followLine()
+
+void followLine_slow()
 {
     if(!detected)
   {
     detectBlack();
-    motorBackward(5, 100);
-    motorBackward(3, 100);
-    motorForward(2, 100);
-    motorForward(4, 100);
+    motorBackward(5, 35);
+    motorBackward(3, 35);
+    motorForward(2, 35);
+    motorForward(4, 35);
   }
 if(millis()-timeDetected < time_check && detected)
 {
   switch(state_turn){
   case turn_right:
-    motorBackward(5, 25);
-    motorForward(4, 25);
-    motorBackward(3, 100);
-    motorForward(2, 100);
+    motorBackward(5, 20);
+    motorForward(4, 20);
+    motorBackward(3, 45);
+    motorForward(2, 65);
     break;
   case turn_left:
-    motorBackward(3, 25);
-    motorForward(2, 25);
-    motorBackward(5, 100);
-    motorForward(4, 100);
+    motorBackward(3, 20);
+    motorForward(2, 20);
+    motorBackward(5, 45);
+    motorForward(4, 65);
+    break;
+}
+}
+else
+detected = false;
+}
+
+void followLine()
+{
+    if(!detected)
+  {
+    detectBlack();
+    motorBackward(5, 45);
+    motorBackward(3, 45);
+    motorForward(2, 45);
+    motorForward(4, 45);
+  }
+if(millis()-timeDetected < time_check && detected)
+{
+  switch(state_turn){
+  case turn_right:
+    motorBackward(5, 20);
+    motorForward(4, 20);
+    motorBackward(3, 45);
+    motorForward(2, 65);
+    break;
+  case turn_left:
+    motorBackward(3, 20);
+    motorForward(2, 20);
+    motorBackward(5, 45);
+    motorForward(4, 65);
     break;
 }
 }
@@ -240,35 +287,19 @@ detected = false;
 
 void stationary_turn()
 {
-    if(millis() - timeStationary < 300 && ((state_corner_turn == turn_right_90) || (state_corner_turn == turn_left_90)))
-    {
-        motorBackward(5, 45);
-        motorBackward(3, 45);
-        motorForward(2, 45);
-        motorForward(4, 45);
-    }
-    else if(millis() - timeStationary < 300 && ((state_corner_turn == turn_right_180) || (state_corner_turn == turn_left_180)))
-    {
-        motorForward(5, 45);
-        motorForward(3, 45);
-        motorBackward(2, 45);
-        motorBackward(4, 45);
-    }   
-    else if(millis() - timeStationary == 300)
-        motorAllStop();
-    else if(millis() - timeStationary < 1000 && millis() - timeStationary > 300 && ((state_corner_turn == turn_right_90) || (state_corner_turn == turn_right_180)))
+    if(millis() - timeStationary < 700 && ((state_corner_turn == turn_right_90) || (state_corner_turn == turn_right_180)))
      {
          motorStop(3);
          motorStop(5);
-         motorBackward(2, 55);
-         motorForward(4, 55);        
+         motorBackward(2, 75);
+         motorForward(4, 75);        
      }
-    else if(millis() - timeStationary < 1000 && millis() - timeStationary > 300 && ((state_corner_turn == turn_left_90) || (state_corner_turn == turn_left_180)))
+    else if(millis() - timeStationary < 700 && ((state_corner_turn == turn_left_90) || (state_corner_turn == turn_left_180)))
      {
          motorStop(3);
          motorStop(5);
-         motorForward(2, 55);
-         motorBackward(4, 55);        
+         motorForward(2, 75);
+         motorBackward(4, 75);       
      }
    else if(!turn_finished && millis() -timeStationary > 1000)
    { 
