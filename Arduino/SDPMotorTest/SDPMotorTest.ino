@@ -8,6 +8,7 @@
 #define TURNING 4
 #define ONWAIT 5
 #define INITIAL 6
+#define FORK 7
 
 unsigned long obstructionTilHalt = 10000;
 unsigned long timeTilClear = 700;
@@ -30,6 +31,11 @@ unsigned long time_180;
 #define turn_left 0
 #define turn_right 1
 
+
+int state_fork = 0;
+#define UP 1
+#define DOWN 2
+
 bool detected = false;
 int state_turn = -1;
 int turn_count = 0;
@@ -45,13 +51,15 @@ int state_count = 0;
 bool blue_spot = false;
 bool turn_finished = false;
 bool received = false;
-
+bool fork_finished = false;
 
 void setup(){
   SDPsetup();
   delay(3000);
   helloWorld();
 }
+
+int write_count = 0;
 
 void loop(){
   switch(state){
@@ -83,15 +91,18 @@ void loop(){
      case HALTED: 
         break;
      case INITIAL:
-         motorAllStop();
         if(received)
-        {
-          state = TURNING;
+        {      
+            state = TURNING;
+            received = false;
+            timeStationary = millis();
         }  
+        else
+          motorAllStop();
         break;        
      case ONWAIT:
          motorAllStop();
-        if(!received&&send_count == 0)
+        if(!received && send_count == 0)
         {
           Serial.write('n');
           send_count++;
@@ -101,11 +112,22 @@ void loop(){
           state = TURNING;
           timeStationary = millis();
           send_count = 0;
+          received = false;
         }
         break;
      case TURNING:
         stationary_turn();
         break;
+     case FORK:
+    if(!fork_finished)
+      fork();
+    else
+      {
+        state_corner_turn = turn_left_180;
+        state = TURNING;
+        fork_finished = false;
+      }
+      break;
   }
 }
 int obstructed(){
@@ -117,6 +139,12 @@ void halt(){
  motorAllStop();
 }
 
+void read_color()
+{
+  GroveColorSensor colorSensor;
+  colorSensor.ledStatus = 1;
+  colorSensor.readRGB(&red,&green,&blue);
+}
 
 void detectSpot()
 {
@@ -135,7 +163,6 @@ void detectSpot()
 
 
 void serialEvent(){
-  Serial.println('r');
   switch(Serial.read()){
     case 'A':
       received = true;
@@ -153,10 +180,12 @@ void serialEvent(){
       state = GOING;
       break;
     case 'U':
-      received = true;
+      state = FORK;
+      state_fork = UP; 
       break;
     case 'D':
-      received = true;    
+      state = FORK;
+      state_fork = DOWN;
       break;
   }
 }
@@ -209,40 +238,39 @@ detected = false;
 
 void stationary_turn()
 {
-    if(millis() - timeStationary < 500 && ((state_corner_turn == turn_right_90) || (state_corner_turn == turn_left_90)))
+    if(millis() - timeStationary < 300 && ((state_corner_turn == turn_right_90) || (state_corner_turn == turn_left_90)))
     {
-        motorBackward(5, 100);
-        motorBackward(3, 100);
-        motorForward(2, 100);
-        motorForward(4, 100);
+        motorBackward(5, 45);
+        motorBackward(3, 45);
+        motorForward(2, 45);
+        motorForward(4, 45);
     }
-    else if(millis() - timeStationary < 500 && ((state_corner_turn == turn_right_180) || (state_corner_turn == turn_left_180)))
+    else if(millis() - timeStationary < 300 && ((state_corner_turn == turn_right_180) || (state_corner_turn == turn_left_180)))
     {
-        motorForward(5, 100);
-        motorForward(3, 100);
-        motorBackward(2, 100);
-        motorBackward(4, 100);
-    }    
-    else if(millis() - timeStationary == 500)
+        motorForward(5, 45);
+        motorForward(3, 45);
+        motorBackward(2, 45);
+        motorBackward(4, 45);
+    }   
+    else if(millis() - timeStationary == 300)
         motorAllStop();
-    else if(millis() - timeStationary < 1400 && millis() - timeStationary > 500 && ((state_corner_turn == turn_right_90) || (state_corner_turn == turn_right_180)))
+    else if(millis() - timeStationary < 1000 && millis() - timeStationary > 300 && ((state_corner_turn == turn_right_90) || (state_corner_turn == turn_right_180)))
      {
          motorStop(3);
          motorStop(5);
-         motorBackward(2, 100);
-         motorForward(4, 100);        
+         motorBackward(2, 55);
+         motorForward(4, 55);        
      }
-    else if(millis() - timeStationary < 1400 && millis() - timeStationary > 500 && ((state_corner_turn == turn_left_90) || (state_corner_turn == turn_left_180)))
+    else if(millis() - timeStationary < 1000 && millis() - timeStationary > 300 && ((state_corner_turn == turn_left_90) || (state_corner_turn == turn_left_180)))
      {
          motorStop(3);
          motorStop(5);
-         motorForward(2, 100);
-         motorBackward(4, 100);        
+         motorForward(2, 55);
+         motorBackward(4, 55);        
      }
-     else if(millis() - timeStationary == 1400)
-       motorAllStop;
-   else if(millis() - timeStationary > 1400 && !turn_finished)
+   else if(!turn_finished && millis() -timeStationary > 1000)
    { 
+    read_color();
     switch(state_corner_turn)
     {
         case turn_right_90: 
@@ -261,9 +289,9 @@ void stationary_turn()
     }
     else if(turn_finished)
     {
-      state = ONWAIT;
-      received = false;
+      motorAllStop();
       turn_finished = false;
+      state = ONWAIT;
     }
 }
 
@@ -297,4 +325,43 @@ void turn_right_func()
          motorBackward(2, 75);
          motorForward(4, 75);
       }
+}
+
+void fork()
+{
+
+    switch(state_fork)
+  {
+    case UP:
+      fork_up();
+      break;
+    case DOWN:
+      fork_down();
+      break;
+  }
+ 
+}
+
+void fork_up()
+{
+  digitalWrite(6, HIGH);
+  if(!digitalRead(6) && !fork_finished)
+  {
+    fork_finished = true;
+    motorStop(0);
+  }
+  else if(digitalRead(6) && !fork_finished)
+    motorForward(0, 75);
+}
+
+void fork_down()
+{
+  digitalWrite(9, HIGH);
+  if(!digitalRead(9) && !fork_finished)
+  {
+    fork_finished = true;
+    motorStop(0);
+  }
+  else if(digitalRead(9) && !fork_finished)
+    motorBackward(0, 75);
 }

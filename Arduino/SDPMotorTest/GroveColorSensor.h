@@ -14,7 +14,7 @@
 #else
   #include "WProgram.h"
 #endif
-#include <Registers.h>
+#include "Registers.h"
 
 class GroveColorSensor
 {
