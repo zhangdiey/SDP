@@ -62,10 +62,12 @@ void setup(){
 int write_count = 0;
 
 void loop(){
-  switch(state){
+    read_color();
+    switch(state){
     case GOING:
         detectSpot();
         followLine();
+        obstructed();
       break;
     case OBSTRUCTED:
       if(obstructed()){
@@ -270,7 +272,6 @@ void stationary_turn()
      }
    else if(!turn_finished && millis() -timeStationary > 1000)
    { 
-    read_color();
     switch(state_corner_turn)
     {
         case turn_right_90: 
