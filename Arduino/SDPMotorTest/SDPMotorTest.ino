@@ -39,7 +39,6 @@ int state_fork = 0;
 bool detected = false;
 int state_turn = -1;
 int turn_count = 0;
-int send_count = 0;
 
 int state_corner_turn = 0;
 #define turn_right_90 0
@@ -52,14 +51,13 @@ bool blue_spot = false;
 bool turn_finished = false;
 bool received = false;
 bool fork_finished = false;
+bool sent = false;
 
 void setup(){
   SDPsetup();
-  delay(3000);
+  delay(300);
   helloWorld();
 }
-
-int write_count = 0;
 
 void loop(){
     read_color();
@@ -96,38 +94,46 @@ void loop(){
             state = TURNING;
             received = false;
             timeStationary = millis();
+            sent = false;
         }  
         else
+        {
           motorAllStop();
+        }
         break;        
      case ONWAIT:
-         motorAllStop();
-        if(!received && send_count == 0)
+        if(!received)
         {
-          Serial.write('n');
-          send_count++;
+          if(!sent)
+          {
+            Serial.write('n');
+            sent = true;
+            motorAllStop();
+          }
+          else
+            motorAllStop();
         }
         else if(received)
         {
+          received = false;
+          sent = false;
           state = TURNING;
           timeStationary = millis();
-          send_count = 0;
-          received = false;
+
         }
         break;
      case TURNING:
         stationary_turn();
         break;
      case FORK:
-    if(!fork_finished)
-      fork();
-    else
-      {
-        state_corner_turn = turn_left_180;
-        state = TURNING;
-        fork_finished = false;
-      }
-      break;
+        if(!fork_finished)
+          fork();
+        else
+          {
+            state = ONWAIT;
+            fork_finished = false;
+          }
+        break;
   }
 }
 int obstructed(){
@@ -188,8 +194,9 @@ void detectSpot()
   else if(readAnalogSensorData(0) > value_for_black && first_black)
     {
       state = ONWAIT;
+      sent = false;
       first_black = false;
-  }
+    }
   else if(first_black && readAnalogSensorData(0) < value_for_white)
     {
       if(millis() - timeFirstBlack < 500)
