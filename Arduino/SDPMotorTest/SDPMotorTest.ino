@@ -128,9 +128,10 @@ void loop(){
      case FORK:
         if(!fork_finished)
           fork();
-        else
+        else if(fork_finished)
           {
             state = ONWAIT;
+            sent = false;
             fork_finished = false;
           }
         break;
