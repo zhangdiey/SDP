@@ -52,6 +52,7 @@ bool turn_finished = false;
 bool received = false;
 bool fork_finished = false;
 bool sent = false;
+bool fork_is_up = false;
 
 void setup(){
   SDPsetup();
@@ -172,11 +173,13 @@ void serialEvent(){
       break;
     case 'U':
       state = FORK;
-      state_fork = UP; 
+      state_fork = UP;
+      fork_is_up = true;
       break;
     case 'D':
       state = FORK;
       state_fork = DOWN;
+      fork_is_up = false;
       break;
   }
 }
@@ -245,16 +248,16 @@ if(millis()-timeDetected < time_check && detected)
 {
   switch(state_turn){
   case turn_right:
-    motorBackward(5, 20);
-    motorForward(4, 20);
-    motorBackward(3, 45);
-    motorForward(2, 65);
+    motorBackward(5, 25);
+    motorForward(4, 25);
+    motorBackward(3, 60);
+    motorForward(2, 85);
     break;
   case turn_left:
-    motorBackward(3, 20);
-    motorForward(2, 20);
-    motorBackward(5, 45);
-    motorForward(4, 65);
+    motorBackward(3, 25);
+    motorForward(2, 25);
+    motorBackward(5, 60);
+    motorForward(4, 85);
     break;
 }
 }
@@ -276,16 +279,16 @@ if(millis()-timeDetected < time_check && detected)
 {
   switch(state_turn){
   case turn_right:
-    motorBackward(5, 20);
-    motorForward(4, 20);
-    motorBackward(3, 45);
-    motorForward(2, 65);
+    motorBackward(5, 35);
+    motorForward(4, 35);
+    motorBackward(3, 75);
+    motorForward(2, 100);
     break;
   case turn_left:
-    motorBackward(3, 20);
-    motorForward(2, 20);
-    motorBackward(5, 45);
-    motorForward(4, 65);
+    motorBackward(3, 35);
+    motorForward(2, 35);
+    motorBackward(5, 75);
+    motorForward(4, 100);
     break;
 }
 }
@@ -295,21 +298,29 @@ detected = false;
 
 void stationary_turn()
 {
-    if(millis() - timeStationary < 700 && ((state_corner_turn == turn_right_90) || (state_corner_turn == turn_right_180)))
+    if(state_corner_turn == turn_left_90 || state_corner_turn == turn_right_90)
+        stationary_turn_90();
+    else if(state_corner_turn == turn_left_180 || state_corner_turn == turn_right_180)
+        stationary_turn_180();
+}
+
+void stationary_turn_90()
+{
+    if(millis() - timeStationary < 700 && ((state_corner_turn == turn_right_90)))
      {
          motorStop(3);
          motorStop(5);
-         motorBackward(2, 75);
-         motorForward(4, 75);        
+         motorBackward(2, 70 + fork_is_up * 17);
+         motorForward(4, 70 + fork_is_up * 17);
      }
-    else if(millis() - timeStationary < 700 && ((state_corner_turn == turn_left_90) || (state_corner_turn == turn_left_180)))
+    else if(millis() - timeStationary < 700 && ((state_corner_turn == turn_left_90)))
      {
          motorStop(3);
          motorStop(5);
-         motorForward(2, 75);
-         motorBackward(4, 75);       
+         motorForward(2, 70 + fork_is_up * 17));
+         motorBackward(4, 70 + fork_is_up * 17));
      }
-   else if(!turn_finished && millis() -timeStationary > 1000)
+   else if(!turn_finished && millis() -timeStationary > 700)
    { 
     switch(state_corner_turn)
     {
@@ -335,6 +346,23 @@ void stationary_turn()
     }
 }
 
+stationary_turn_180()
+{
+    if(readAnalogSensorData(3)>value_for_black && readAnalogSensorData(2)>value_for_black)
+    {
+        motorAllStop();
+        timeStationary = millis();
+        state_corner_turn = turn_right_90;
+    }
+    else
+    {
+        motorBackward(2, 45);
+        motorBackward(4, 45);
+        motorForward(5, 45);
+        motorForward(3, 45);
+    }
+}
+
 void turn_left_func()
 {
     if(red < 70 && green < 70 && blue < 20)
@@ -346,8 +374,8 @@ void turn_left_func()
      {
          motorStop(3);
          motorStop(5);
-         motorForward(2, 75);
-         motorBackward(4, 75);
+         motorForward(2, 70 + fork_is_up * 17));
+         motorBackward(4, 70 + fork_is_up * 17));
       }
 }
 
@@ -362,8 +390,8 @@ void turn_right_func()
      {
          motorStop(3);
          motorStop(5);
-         motorBackward(2, 75);
-         motorForward(4, 75);
+         motorBackward(2, 70 + fork_is_up * 17));
+         motorForward(4, 70 + fork_is_up * 17));
       }
 }
 
