@@ -8,7 +8,10 @@ def make_request_eval(shortest_paths,alpha,time_zero):
         travel_time=shortest_paths[previous_node][0][request.start_node]
         execution_time=shortest_paths[request.start_node][0][request.end_node]
         schedule_time+=travel_time+execution_time
-        waiting_time=schedule_time+time_zero-request.time
+        if (request.type == "delivering"):
+            waiting_time=schedule_time+time_zero-request.time
+        else:
+            waiting_time=schedule_time+time_zero-request.time-execution_time
         schedule_cost+=math.exp(alpha*waiting_time)*(travel_time+execution_time)
         wait_times.append((request.id,waiting_time))
         return (request.end_node,schedule_time,schedule_cost,wait_times)
