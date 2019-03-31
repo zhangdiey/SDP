@@ -1,0 +1,37 @@
+import routing as r
+import numpy as np
+from request import Request
+from sortedcontainers import SortedDict
+def simulate(arrival_rate,exercise_duration,exercise_number,alpha,graph,duration,mean_fitness,std_fitness):
+    arrival_duration = 1/arrival_rate
+    geom_p = 1/(exercise_number+1)
+    queue = 0
+    available_benches = set([node for node in graph.nodes if node[0]=='B'])
+    occupied_benches = set([])
+    available_weights = SortedDict(zip(map(lambda x:x*5,range(len(graph.nodes))),filter(lambda x:x[0]=='S',graph.nodes)))
+    next_arrival=np.random.exponential(arrival_duration)
+    next_request_made_t=duration
+    next_request_completed_t=duration
+    time=next_arrival
+    event=('arrival')
+    requests=set([])
+    schedule=[]
+    while time < duration:
+        if schedule == []:
+            
+        if event == 'arrival':
+            if len(available_benches) == 0:
+                queue+=1
+            else:
+                fitness=np.random.normal(mean_fitness,std_fitness)
+                bench=available_benches.pop()
+                occupied_benches.add(bench)
+                max_weight=np.random.uniform(high=2.0)*fitness
+                print(next(available_weights.irange(max_weight,reverse=true)))
+                requests.add(Request(time,'delivery',
+            next_arrival=np.random.exponential(arrival_duration)
+        elif event 
+        
+
+        
+        

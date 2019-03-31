@@ -72,12 +72,14 @@ def route_schedule_to_pi_schedule(route_schedule,prev_edge,graph):
     return pi_schedule
 def correct(detected_colour,last_instruction,remaining_instructions,graph,shortest_paths):
     guess_node = min([node for node in graph.nodes if node['colour']==detected_colour],
-                     key=(lambda node:shortest_paths[last_instruction[1]][0][node]))
+                     key=(lambda node:shortest_paths[last_instruction[1][0][node]]))
     if guess_node in [instruction[1] for intstruction in remaining_instructions]:
         while remaining_instructions[0][1]!=guess_node:
             remaining_instructions.pop()
         return remaining_instructions
     else:
-        guess_edge=(min(nx.neighbors(graph,guess_node),
-                        key=(lambda node:shortest_paths[last_instruction[1]][0][node])),guess_node)
-        return route_schedule_to_pi_schedule([(shortest_paths[guess_node][1][last_instruction[1]],[],0)],guess_edge,graph)[0][0]+remaining_instructions
+        guess_edge=
+        return route_schedule_to_pi_schedule(
+                     
+                     
+                     

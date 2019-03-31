@@ -2,7 +2,7 @@ import flask
 from flask_jsonpify import jsonify
 import firebase_admin
 from firebase_admin import db
-import requests
+import requests as httpreq
 import networkx as nx
 import json
 import ast
@@ -44,7 +44,7 @@ command = []
 last_edge = ('SA2','5')
 
 # hyper-parameters
-alpha = 3
+alpha = 0.03
 
 # emergency stop
 stop = 'False'
@@ -68,7 +68,8 @@ stop = 'False'
 
 @app.route('/')
 def initialize_main():
-    os.system('if [ ! -p /tmp/simulator ]; then mkfifo /tmp/simulator;fi')
+    # simulation setup
+    # os.system('if [ ! -p /tmp/simulator ]; then mkfifo /tmp/simulator;fi')
     # set two listeners
     try:
         DEMO.child('layout').listen(layoutListener)
@@ -89,6 +90,40 @@ def get_main():
     else:
         return "INVALID STATUS"
 
+@app.route('/takeBuffer',methods=['POST'])
+def takeBuffer_main():
+    takeRequest()
+    return 'buffer taken'
+
+@app.route('/changeCurRequest',methods=['POST'])
+def changeCurRequest_main():
+    global cur_request
+    global requests
+    global requests_id
+    global command
+    addToLog()
+    requests = requests[1:]
+    command = command[1:]
+    id = flask.request.get_json(force=True)['id']
+    cur_request = requests[0]
+    print('cur_req:',cur_request.id)
+    cur_command = command[0]
+    print('cur_cmd:',cur_command)
+    changeCurRequest(cur_request)
+    return 'changed cur_request'
+
+@app.route('/removeCurRequest',methods=['POST'])
+def removeCurRequest_main():
+    global cur_request
+    global requests
+    global requests_id
+    global command
+    addToLog()
+    removeCurRequest()
+    requests = requests[1:]
+    command = command[1:]
+    return 'remove cur_request'
+
 def updateAlert(status):
     DEMO.update({'alert':f'{status}'})
 
@@ -99,12 +134,12 @@ def updateAlert(status):
 def isValidSTATUS(status):
     return status in ['True','False']
 
-def sendCMD(cmd):
-    dictToSend = {'cmd':cmd}
-    # res = requests.post('http://patamon.inf.ed.ac.uk:3142/getCMD', json=dictToSend)
-    # for testing
-    res = requests.post('http://0.0.0.0:3142/getCMD', json=dictToSend)
-    print ('response from server:', res.text)
+# def sendCMD(cmd):
+#     dictToSend = {'cmd':cmd}
+#     # res = requests.post('http://patamon.inf.ed.ac.uk:3142/getCMD', json=dictToSend)
+#     # for testing
+#     res = requests.post('http://0.0.0.0:3142/getCMD', json=dictToSend)
+#     print ('response from server:', res.text)
 
 # for demo1
 # def listener(event):
@@ -190,8 +225,9 @@ def requestsListener(event):
             # Dewi's Code
             makeSchedule()
             # No need to wait
-            t = threading.Thread(target=startSchedule)
-            t.start()
+            sendCMD()
+            # t = threading.Thread(target=startSchedule)
+            # t.start()
             print('len of requests',len(requests))
         # elif requests == [] and DEMO.child('cur_request').child('status').get() == 'True':
         #     for req in reqs:
@@ -231,6 +267,15 @@ def requestsListener(event):
     else:
         # print('No changes in requests.')
         pass
+
+def sendCMD():
+    global command
+    global requests
+    global cur_request
+    cur_request = requests[0]
+    changeCurRequest(cur_request)
+    dictToSend = {'cmd':command}
+    res = httpreq.post('http://patamon.inf.ed.ac.uk:3142/getCMD', json=dictToSend)
 
 def startSchedule():
     global requests
@@ -380,6 +425,7 @@ def makeRequestObject(reqs,req):
 
 def deleteRequest(request):
     DEMO.child('requests').child(request).delete()
+    print('delete',request,'in firebase!')
 
 def changeCurRequest(request):
     DEMO.child('cur_request').update(request.__dict__)
@@ -405,6 +451,7 @@ def takeRequest():
         buffered_id = []
     if (len(requests)>0):
         makeSchedule()
+        sendCMD()
     else:
         print('No requests in the buffer.')
 
