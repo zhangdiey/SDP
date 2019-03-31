@@ -44,7 +44,7 @@ command = []
 last_edge = ('SA2','5')
 
 # hyper-parameters
-alpha = 3
+alpha = 0.03
 
 # emergency stop
 stop = 'False'
