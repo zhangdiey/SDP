@@ -19,6 +19,7 @@ unsigned long timeOfClearing;
 #define value_for_black 400
 #define value_for_white 100
 int red, blue, green;
+int red_second, blue_second, green_second;
 
 unsigned long timeDetected;
 unsigned long timeBlue;
@@ -53,7 +54,8 @@ bool received = false;
 bool fork_finished = false;
 bool sent = false;
 
-void setup(){
+void setup()
+{
   SDPsetup();
   delay(300);
   helloWorld();
@@ -153,6 +155,11 @@ void read_color()
   colorSensor.readRGB(&red,&green,&blue);
 }
 
+void read_second_color()
+{
+
+}
+
 void serialEvent(){
   switch(Serial.read()){
     case 'A':
@@ -228,8 +235,11 @@ void detectBlack(){
     timeDetected = millis();
     detected = true;
   }
-}
+  else if(red_second < 70 && green_second < 70 && blue_second < 20 && readAnalogSensorData(0) > value_for_black)
+  {
 
+  }
+}
 
 void followLine_slow()
 {
