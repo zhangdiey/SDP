@@ -74,7 +74,9 @@ def route_schedule_to_pi_schedule(route_schedule,prev_edge,graph):
             execution_route.append(('F',end))
             prev_edge=(start,end)
         execution_route.append(('D',prev_edge[1])) #changed by Moy
-        pi_schedule.append((disable_obstruction(transition_route),disable_obstruction(execution_route),id))
+        disable_obstruction(transition_route)
+        disable_obstruction(execution_route)
+        pi_schedule.append((transition_route,execution_route,id))
     return pi_schedule
 def correct(detected_colour,last_instruction,remaining_instructions,graph,shortest_paths):
     guess_node = min([node for node in graph.nodes if node['colour']==detected_colour],
