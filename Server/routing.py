@@ -44,7 +44,7 @@ def schedule_cost(start_node,schedule,request_eval):
 def disable_obstruction(route):
     last_inst=route.pop()
     snd_last_inst=route.pop()
-    snd_last_inst[0]='f'
+    snd_last_inst=('f',snd_last_inst[1])
     route.append(snd_last_inst)
     route.append(last_inst)
 def route_schedule_to_pi_schedule(route_schedule,prev_edge,graph):
