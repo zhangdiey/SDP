@@ -42,7 +42,7 @@ def schedule_to_route_schedule(start_node,schedule,shortest_paths):
 def schedule_cost(start_node,schedule,request_eval):
     return functools.reduce(request_eval,schedule,(start_node,0,0,[]))
 def disable_obstruction(route):
-    if len(route)>2:
+    if len(route)>=2:
         if route[len(route)-2][0]=='F':
             orig=route[len(route)-2]
             route[len(route)-2]=('f',orig[1])
