@@ -41,6 +41,12 @@ def schedule_to_route_schedule(start_node,schedule,shortest_paths):
     return route_schedule
 def schedule_cost(start_node,schedule,request_eval):
     return functools.reduce(request_eval,schedule,(start_node,0,0,[]))
+def disable_obstruction(route):
+    last_inst=route.pop()
+    snd_last_inst=route.pop()
+    snd_last_inst[0]='f'
+    route.append(snd_last_inst)
+    route.append(last_inst)
 def route_schedule_to_pi_schedule(route_schedule,prev_edge,graph):
     pi_schedule=[]
     for (transition,execution,id) in route_schedule:
@@ -68,7 +74,7 @@ def route_schedule_to_pi_schedule(route_schedule,prev_edge,graph):
             execution_route.append(('F',end))
             prev_edge=(start,end)
         execution_route.append(('D',prev_edge[1])) #changed by Moy
-        pi_schedule.append((transition_route,execution_route,id))
+        pi_schedule.append((disable_obstruction(transition_route),disable_obstruction(execution_route),id))
     return pi_schedule
 def correct(detected_colour,last_instruction,remaining_instructions,graph,shortest_paths):
     guess_node = min([node for node in graph.nodes if node['colour']==detected_colour],
