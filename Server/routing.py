@@ -42,11 +42,10 @@ def schedule_to_route_schedule(start_node,schedule,shortest_paths):
 def schedule_cost(start_node,schedule,request_eval):
     return functools.reduce(request_eval,schedule,(start_node,0,0,[]))
 def disable_obstruction(route):
-    last_inst=route.pop()
-    snd_last_inst=route.pop()
-    snd_last_inst=('f',snd_last_inst[1])
-    route.append(snd_last_inst)
-    route.append(last_inst)
+    if len(route)>2:
+        if route[len(route)-2][0]=='F':
+            orig=route[len(route)-2]
+            route[len(route)-2]=('f',orig[1])
 def route_schedule_to_pi_schedule(route_schedule,prev_edge,graph):
     pi_schedule=[]
     for (transition,execution,id) in route_schedule:
